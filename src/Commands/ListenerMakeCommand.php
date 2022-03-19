@@ -4,6 +4,7 @@ namespace Nwidart\Modules\Commands;
 
 use Illuminate\Support\Str;
 use Nwidart\Modules\Module;
+use Nwidart\Modules\Contracts\ModuleInterface;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 use Nwidart\Modules\Support\Stub;
 use Nwidart\Modules\Traits\ModuleCommandTrait;
@@ -75,7 +76,7 @@ class ListenerMakeCommand extends GeneratorCommand
         return $module->config('paths.generator.listener.namespace') ?: $module->config('paths.generator.listener.path', 'Listeners');
     }
 
-    protected function getEventName(Module $module)
+    protected function getEventName(ModuleInterface $module)
     {
         $namespace = $this->laravel['modules']->config('namespace') . "\\" . $module->getStudlyName();
         $eventPath = GenerateConfigReader::read('event');

@@ -2,52 +2,43 @@
 
 namespace Nwidart\Modules\Contracts;
 
-use Nwidart\Modules\Exceptions\ModuleNotFoundException;
 use Nwidart\Modules\Module;
+use Nwidart\Modules\Collection;
+use Nwidart\Modules\Exceptions\ModuleNotFoundException;
 
 interface RepositoryInterface
 {
     /**
-     * Get all modules.
-     *
-     * @return mixed
+     * Get all modules
      */
-    public function all();
+    public function all(): array;
 
     /**
-     * Get cached modules.
-     *
-     * @return array
+     * Get cached modules
      */
-    public function getCached();
+    public function getCached(): array;
 
     /**
      * Scan & get all available modules.
-     *
-     * @return array
      */
-    public function scan();
+    public function scan(): array;
 
     /**
      * Get modules as modules collection instance.
-     *
-     * @return \Nwidart\Modules\Collection
      */
-    public function toCollection();
+    public function toCollection(): Collection;
 
     /**
      * Get scanned paths.
-     *
-     * @return array
      */
-    public function getScanPaths();
+    public function getScanPaths(): array;
 
     /**
      * Get list of enabled modules.
      *
-     * @return mixed
+     * @return array
      */
-    public function allEnabled();
+    public function allEnabled(): array;
 
     /**
      * Get list of disabled modules.
@@ -58,26 +49,22 @@ interface RepositoryInterface
 
     /**
      * Get count from all modules.
-     *
-     * @return int
      */
-    public function count();
+    public function count(): int;
 
     /**
      * Get all ordered modules.
-     * @param string $direction
-     * @return mixed
      */
-    public function getOrdered($direction = 'asc');
+    public function getOrdered(string $direction = 'asc'): array;
 
     /**
      * Get modules by the given status.
      *
      * @param int $status
      *
-     * @return mixed
+     * @return array
      */
-    public function getByStatus($status);
+    public function getByStatus($status): array;
 
     /**
      * Find a specific module.
@@ -97,11 +84,10 @@ interface RepositoryInterface
     public function findRequirements($name): array;
 
     /**
-     * Find a specific module. If there return that, otherwise throw exception.
-     *
+     * Find a specific module.
      * @param $name
-     *
      * @return mixed
+     * @throws ModuleNotFoundException
      */
     public function findOrFail(string $name);
 
@@ -176,4 +162,19 @@ interface RepositoryInterface
      * @throws ModuleNotFoundException
      */
     public function isDisabled(string $name) : bool;
+
+    /**
+     * Determine whether the given module exist.
+     *
+     * @param $name
+     * @return bool
+     */
+    public function exists(string $name) : bool;
+
+    /**
+     * Delete a specific module.
+     * @param string $name
+     * @return bool
+     * @throws \Nwidart\Modules\Exceptions\ModuleNotFoundException
+     */
 }

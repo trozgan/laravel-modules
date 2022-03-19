@@ -48,6 +48,15 @@ abstract class ModulesServiceProvider extends ServiceProvider
         ], 'stubs');
     }
 
+    protected function registerMigrations()
+    {
+        if (! class_exists('CreateModulesTable')) {
+            $this->publishes([
+                __DIR__.'/../database/migrations/create_modules_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_modules_table.php'),
+            ], 'migrations');
+        }
+    }
+
     /**
      * Register the service provider.
      */

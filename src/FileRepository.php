@@ -125,20 +125,18 @@ abstract class FileRepository implements RepositoryInterface, Countable
 
     /**
      * Creates a new Module instance
-     *
      * @param Container $app
-     * @param string $args
-     * @param string $path
-     * @return \Nwidart\Modules\Module
+     * @param $name
+     * @param $path
+     * @return Contracts\ModuleInterface
      */
-    abstract protected function createModule(...$args);
+    abstract protected function createModule(...$args): Contracts\ModuleInterface;
 
     /**
      * Get & scan all modules.
-     *
      * @return array
      */
-    public function scan()
+    public function scan(): array
     {
         $paths = $this->getScanPaths();
 
@@ -195,10 +193,8 @@ abstract class FileRepository implements RepositoryInterface, Countable
 
     /**
      * Get cached modules.
-     *
-     * @return array
      */
-    public function getCached()
+    public function getCached(): array
     {
         return $this->cache->remember($this->config('cache.key'), $this->config('cache.lifetime'), function () {
             return $this->toCollection()->toArray();
@@ -243,7 +239,7 @@ abstract class FileRepository implements RepositoryInterface, Countable
      *
      * @return bool
      */
-    public function has($name) : bool
+    public function exists(string $name) : bool
     {
         return array_key_exists($name, $this->all());
     }
@@ -285,7 +281,7 @@ abstract class FileRepository implements RepositoryInterface, Countable
      *
      * @return array
      */
-    public function getOrdered($direction = 'asc') : array
+    public function getOrdered(string $direction = 'asc') : array
     {
         $modules = $this->allEnabled();
 
@@ -343,7 +339,7 @@ abstract class FileRepository implements RepositoryInterface, Countable
             }
         }
 
-        return;
+        return null;
     }
 
     /**

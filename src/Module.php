@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Nwidart\Modules;
 
@@ -10,8 +11,9 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Translation\Translator;
 use Nwidart\Modules\Contracts\ActivatorInterface;
+use Nwidart\Modules\Contracts\ModuleInterface;
 
-abstract class Module
+abstract class Module extends ServiceProvider implements ModuleInterface
 {
     use Macroable;
 
@@ -171,7 +173,8 @@ abstract class Module
      *
      * @return $this
      */
-    public function setPath($path): Module
+
+    public function setPath($path): self
     {
         $this->path = $path;
 
@@ -323,8 +326,8 @@ abstract class Module
      *
      * @return bool
      */
-    public function isStatus(bool $status) : bool
-    {
+
+    public function isStatus(int $status) : bool    {
         return $this->activator->hasStatus($this, $status);
     }
 
@@ -355,9 +358,9 @@ abstract class Module
      *
      * @return void
      */
-    public function setActive(bool $active): void
+    public function setActive(int $active): bool
     {
-        $this->activator->setActive($this, $active);
+        return (bool) $this->json()->set('active', $active)->save();
     }
 
     /**
