@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Commands;
 
+use Illuminate\Support\Str;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 use Nwidart\Modules\Support\Stub;
 use Nwidart\Modules\Traits\ModuleCommandTrait;
@@ -59,7 +60,7 @@ class ControllerMakeCommand extends GeneratorCommand
             'CONTROLLERNAME'    => $this->getControllerName(),
             'NAMESPACE'         => $module->getStudlyName(),
             'CLASS_NAMESPACE'   => $this->getClassNamespace($module),
-            'CLASS'             => $this->getControllerName(),
+            'CLASS'             => $this->getControllerNameWithoutNamespace(),
             'LOWER_NAME'        => $module->getLowerName(),
             'MODULE'            => $this->getModuleName(),
             'NAME'              => $this->getModuleName(),
@@ -88,6 +89,7 @@ class ControllerMakeCommand extends GeneratorCommand
     {
         return [
             ['plain', 'p', InputOption::VALUE_NONE, 'Generate a plain controller', null],
+            ['api', null, InputOption::VALUE_NONE, 'Exclude the create and edit methods from the controller.'],
         ];
     }
 
@@ -96,30 +98,44 @@ class ControllerMakeCommand extends GeneratorCommand
      */
     protected function getControllerName()
     {
-        $controller = studly_case($this->argument('controller'));
+        $controller = Str::studly($this->argument('controller'));
 
-        if (str_contains(strtolower($controller), 'controller') === false) {
+        if (Str::contains(strtolower($controller), 'controller') === false) {
             $controller .= 'Controller';
         }
 
         return $controller;
     }
 
+    /**
+     * @return array|string
+     */
+    private function getControllerNameWithoutNamespace()
+    {
+        return class_basename($this->getControllerName());
+    }
+
     public function getDefaultNamespace() : string
     {
-        return $this->laravel['modules']->config('paths.generator.controller.path', 'Http/Controllers');
+        $module = $this->laravel['modules'];
+
+        return $module->config('paths.generator.controller.namespace') ?: $module->config('paths.generator.controller.path', 'Http/Controllers');
     }
 
     /**
-     * Get the stub file name based on the plain option
+     * Get the stub file name based on the options
      * @return string
      */
-    private function getStubName()
+    protected function getStubName()
     {
         if ($this->option('plain') === true) {
-            return '/controller-plain.stub';
+            $stub = '/controller-plain.stub';
+        } elseif ($this->option('api') === true) {
+            $stub = '/controller-api.stub';
+        } else {
+            $stub = '/controller.stub';
         }
 
-        return '/controller.stub';
+        return $stub;
     }
 }

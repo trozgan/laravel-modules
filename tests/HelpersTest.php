@@ -2,6 +2,8 @@
 
 namespace Nwidart\Modules\Tests;
 
+use Illuminate\Support\Str;
+
 class HelpersTest extends BaseTestCase
 {
     /**
@@ -13,7 +15,7 @@ class HelpersTest extends BaseTestCase
      */
     private $modulePath;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->modulePath = base_path('modules/Blog');
@@ -21,7 +23,7 @@ class HelpersTest extends BaseTestCase
         $this->artisan('module:make', ['name' => ['Blog']]);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->finder->deleteDirectory($this->modulePath);
         parent::tearDown();
@@ -30,6 +32,12 @@ class HelpersTest extends BaseTestCase
     /** @test */
     public function it_finds_the_module_path()
     {
-        $this->assertTrue(str_contains(module_path('Blog'), 'modules/Blog'));
+        $this->assertTrue(Str::contains(module_path('Blog'), 'modules/Blog'));
+    }
+
+    /** @test */
+    public function it_can_bind_a_relative_path_to_module_path()
+    {
+        $this->assertTrue(Str::contains(module_path('Blog', 'config/config.php'), 'modules/Blog/config/config.php'));
     }
 }

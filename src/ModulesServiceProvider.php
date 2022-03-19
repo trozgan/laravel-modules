@@ -10,13 +10,6 @@ use Nwidart\Modules\Providers\ContractsServiceProvider;
 abstract class ModulesServiceProvider extends ServiceProvider
 {
     /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
-
-    /**
      * Booting the package.
      */
     public function boot()
@@ -44,11 +37,15 @@ abstract class ModulesServiceProvider extends ServiceProvider
     protected function registerNamespaces()
     {
         $configPath = __DIR__ . '/../config/config.php';
+        $stubsPath = dirname(__DIR__) . '/src/Commands/stubs';
 
-        $this->mergeConfigFrom($configPath, 'modules');
         $this->publishes([
             $configPath => config_path('modules.php'),
         ], 'config');
+
+        $this->publishes([
+            $stubsPath => base_path('stubs/nwidart-stubs'),
+        ], 'stubs');
     }
 
     protected function registerMigrations()
@@ -72,7 +69,7 @@ abstract class ModulesServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return ['modules'];
+        return [Contracts\RepositoryInterface::class, 'modules'];
     }
 
     /**

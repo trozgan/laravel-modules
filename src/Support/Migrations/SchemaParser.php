@@ -3,6 +3,8 @@
 namespace Nwidart\Modules\Support\Migrations;
 
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class SchemaParser implements Arrayable
 {
@@ -168,11 +170,22 @@ class SchemaParser implements Arrayable
      */
     protected function addRelationColumn($key, $field, $column)
     {
-        $relatedColumn = snake_case(class_basename($field)) . '_id';
+        if ($key === 0) {
+            $relatedColumn = Str::snake(class_basename($field)) . '_id';
 
-        $method = 'integer';
+            return "->integer('{$relatedColumn}')->unsigned();" . PHP_EOL . "\t\t\t" . "\$table->foreign('{$relatedColumn}')";
+        }
+        if ($key === 1) {
+            return "->references('{$field}')";
+        }
+        if ($key === 2) {
+            return "->on('{$field}')";
+        }
+        if (Str::contains($field, '(')) {
+            return '->' . $field;
+        }
 
-        return "->{$method}('{$relatedColumn}')";
+        return '->' . $field . '()';
     }
 
     /**
@@ -194,7 +207,7 @@ class SchemaParser implements Arrayable
             return '->' . $field . "('" . $column . "')";
         }
 
-        if (str_contains($field, '(')) {
+        if (Str::contains($field, '(')) {
             return '->' . $field;
         }
 
@@ -228,7 +241,7 @@ class SchemaParser implements Arrayable
      */
     public function getColumn($schema)
     {
-        return array_get(explode(':', $schema), 0);
+        return Arr::get(explode(':', $schema), 0);
     }
 
     /**

@@ -2,15 +2,15 @@
 
 namespace Modules\\Blog\\Http\\Controllers;
 
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\\Http\\Request;
-use Illuminate\\Http\\Response;
 use Illuminate\\Routing\\Controller;
 
 class MyController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * @return Response
+     * @return Renderable
      */
     public function index()
     {
@@ -19,7 +19,7 @@ class MyController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     * @return Response
+     * @return Renderable
      */
     public function create()
     {
@@ -28,46 +28,53 @@ class MyController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * @param  Request $request
-     * @return Response
+     * @param Request $request
+     * @return Renderable
      */
     public function store(Request $request)
     {
+        //
     }
 
     /**
      * Show the specified resource.
-     * @return Response
+     * @param int $id
+     * @return Renderable
      */
-    public function show()
+    public function show($id)
     {
         return view(\'blog::show\');
     }
 
     /**
      * Show the form for editing the specified resource.
-     * @return Response
+     * @param int $id
+     * @return Renderable
      */
-    public function edit()
+    public function edit($id)
     {
         return view(\'blog::edit\');
     }
 
     /**
      * Update the specified resource in storage.
-     * @param  Request $request
-     * @return Response
+     * @param Request $request
+     * @param int $id
+     * @return Renderable
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
+        //
     }
 
     /**
      * Remove the specified resource from storage.
-     * @return Response
+     * @param int $id
+     * @return Renderable
      */
-    public function destroy()
+    public function destroy($id)
     {
+        //
     }
 }
 ';

@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Tests\Commands;
 
+use Nwidart\Modules\Contracts\RepositoryInterface;
 use Nwidart\Modules\Tests\BaseTestCase;
 use Spatie\Snapshots\MatchesSnapshots;
 
@@ -17,7 +18,7 @@ class FactoryMakeCommandTest extends BaseTestCase
      */
     private $modulePath;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->modulePath = base_path('modules/Blog');
@@ -25,20 +26,21 @@ class FactoryMakeCommandTest extends BaseTestCase
         $this->artisan('module:make', ['name' => ['Blog']]);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
-        $this->finder->deleteDirectory($this->modulePath);
+        $this->app[RepositoryInterface::class]->delete('Blog');
         parent::tearDown();
     }
 
     /** @test */
     public function it_makes_factory()
     {
-        $this->artisan('module:make-factory', ['name' => 'PostFactory', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-factory', ['name' => 'Post', 'module' => 'Blog']);
 
         $factoryFile = $this->modulePath . '/Database/factories/PostFactory.php';
 
         $this->assertTrue(is_file($factoryFile), 'Factory file was not created.');
         $this->assertMatchesSnapshot($this->finder->get($factoryFile));
+        $this->assertSame(0, $code);
     }
 }

@@ -27,19 +27,21 @@ class PublishMigrationCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle() : int
     {
         if ($name = $this->argument('module')) {
             $module = $this->laravel['modules']->findOrFail($name);
 
             $this->publish($module);
 
-            return;
+            return 0;
         }
 
         foreach ($this->laravel['modules']->allEnabled() as $module) {
             $this->publish($module);
         }
+
+        return 0;
     }
 
     /**
@@ -49,7 +51,7 @@ class PublishMigrationCommand extends Command
      */
     public function publish(ModuleInterface $module)
     {
-        with(new MigrationPublisher(new Migrator($module)))
+        with(new MigrationPublisher(new Migrator($module, $this->getLaravel())))
             ->setRepository($this->laravel['modules'])
             ->setConsole($this)
             ->publish();

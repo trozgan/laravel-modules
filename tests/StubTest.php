@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Tests;
 
+use Illuminate\Support\Str;
 use Nwidart\Modules\Support\Stub;
 
 class StubTest extends BaseTestCase
@@ -11,13 +12,13 @@ class StubTest extends BaseTestCase
      */
     private $finder;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->finder = $this->app['files'];
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
         $this->finder->delete([
@@ -34,7 +35,7 @@ class StubTest extends BaseTestCase
             'NAME' => 'Name',
         ]);
 
-        $this->assertTrue(str_contains($stub->getPath(), 'src/Commands/stubs/model.stub'));
+        $this->assertTrue(Str::contains($stub->getPath(), 'src/Commands/stubs/model.stub'));
         $this->assertEquals(['NAME' => 'Name', ], $stub->getReplaces());
     }
 
@@ -72,7 +73,7 @@ class StubTest extends BaseTestCase
 
         $stub->setPath('/new-path/');
 
-        $this->assertTrue(str_contains($stub->getPath(), 'Commands/stubs/new-path/'));
+        $this->assertTrue(Str::contains($stub->getPath(), 'Commands/stubs/new-path/'));
     }
 
     /** @test */

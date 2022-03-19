@@ -34,11 +34,16 @@ class ModelMakeCommand extends GeneratorCommand
      */
     protected $description = 'Create a new model for the specified module.';
 
-    public function handle()
+    public function handle() : int
     {
-        parent::handle();
+        if (parent::handle() === E_ERROR) {
+            return E_ERROR;
+        }
 
         $this->handleOptionalMigrationOption();
+        $this->handleOptionalControllerOption();
+
+        return 0;
     }
 
     /**
@@ -86,6 +91,7 @@ class ModelMakeCommand extends GeneratorCommand
         return [
             ['fillable', null, InputOption::VALUE_OPTIONAL, 'The fillable attributes.', null],
             ['migration', 'm', InputOption::VALUE_NONE, 'Flag to create associated migrations', null],
+            ['controller', 'c', InputOption::VALUE_NONE, 'Flag to create associated controllers', null],
         ];
     }
 
@@ -97,6 +103,21 @@ class ModelMakeCommand extends GeneratorCommand
         if ($this->option('migration') === true) {
             $migrationName = 'create_' . $this->createMigrationName() . '_table';
             $this->call('module:make-migration', ['name' => $migrationName, 'module' => $this->argument('module')]);
+        }
+    }
+
+    /**
+     * Create the controller file for the given model if controller flag was used
+     */
+    private function handleOptionalControllerOption()
+    {
+        if ($this->option('controller') === true) {
+            $controllerName = "{$this->getModelName()}Controller";
+
+            $this->call('module:make-controller', array_filter([
+                'controller' => $controllerName,
+                'module' => $this->argument('module')
+            ]));
         }
     }
 
@@ -162,6 +183,8 @@ class ModelMakeCommand extends GeneratorCommand
      */
     public function getDefaultNamespace() : string
     {
-        return $this->laravel['modules']->config('paths.generator.model.path', 'Entities');
+        $module = $this->laravel['modules'];
+
+        return $module->config('paths.generator.model.namespace') ?: $module->config('paths.generator.model.path', 'Entities');
     }
 }

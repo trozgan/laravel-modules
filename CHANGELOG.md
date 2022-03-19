@@ -4,6 +4,222 @@ All Notable changes to `laravel-modules` will be documented in this file.
 
 ## Next
 
+## 9.0.1 - 2022-02-28
+
+### Added 
+
+- Added option to publish stubs for modules `php artisan vendor:publish --provider="Nwidart\Modules\LaravelModulesServiceProvider" --tag="stubs"`
+
+### Changed
+
+- [@iamine](https://github.com/iamine) Added Anonymous migration class as default like in Laravel 9.0 [#1363](https://github.com/nWidart/laravel-modules/pull/1363)
+
+## 9.0 - 2022-02-10
+
+### Changed
+
+- Minimum PHP version to 8.0 for supporting Laravel 9
+- Laravel 9 version
+- Increased PHPUnit to 9.5
+- Increased Mockery to 1.4
+- Fixed test replaced expectsEvents with event fakes
+
+## 8.3 - 2022-02-10
+
+### Fixed
+
+- The ability to override commands via config file.
+- Incorrectly placed config key
+- Class name when special characters are used in the rule name
+- Fix error on anonymous migration
+
+### Changed
+
+- Changed `View/Component` to `View/Components`
+- Updated test snapshots for the MakeCommand test snapshots
+- Command stub signature from `signature` to `name`
+- Revert PR1171 which causes tests to fail
+
+### Added 
+
+- Added commands make class component and make view component
+- Test against php 8.0
+- Merge config in register method
+- Added optional controller flag to model generator command
+- Set module for make-controller command
+- Added tests for generating controller in model generator command
+- Added test for check if migration and controller flag are both present
+- Laravel mix v6 support
+
+## 8.2 - 2020-11-11
+
+### Added
+
+- New `module:make-component` command to generate laravel components
+
+### Fixed
+
+- Fixed bug: `Target class [Nwidart\Modules\Commands\] does not exist.`
+
+## 8.1 - 2020-11-10
+
+### Added
+
+- Command management via configuration file 
+- Laravel 8 Factories compatibility
+- New improved way to define controller types. `--web`, `--api` and `--plain` options.
+- New configuration option to make compose run in silent mode
+
+### Changed
+
+- New generated commands now use the `$signature` property instead of `$name`
+- Fixed issue where `order` was used instead of `priority`
+
+## 8.0 - 2020-10-03
+
+### Added
+
+- Laravel 8 support
+
+### Updated
+
+- Update `ListenerMakeCommand` to properly use the `--events` option
+
+## 7.2.0 - 2020-07-30
+
+### Added
+
+- Added return statements in artisan commands. Helpful to validate if something was successfully ran. (#1026)
+
+### Changed
+
+- Update JsonResource namespace, using the new `Illuminate\Http\Resources\Json\JsonResource`. (#969)
+- Enable command returns the status code (#978)
+- Removing module service provider from composer.json stub (#996)
+- Fixed custom stub path issue. Replacing a hardcoded stub path. (#1016)
+- Controller return type changed to `Illuminate\Contracts\Support\Renderable`. (#1020)
+- Change bigIncrements method to id (#1029)
+- Adding force option for module:seed (#1030)
+
+## 7.1.0 - 2020-04-14
+
+### Changed
+
+- `php artsian module:enable` (without any arguments) will enable all modules
+- `php artsian module:disable` (without any arguments) will disable all modules
+- Updating Laravel Mix version as well as cross-env. 
+
+## 7.0.0 - 2020-03-26
+
+### Added
+
+- Laravel 7.0 support 
+
+## 6.2.0 - 2019-11-12
+
+### Changed
+
+- Properly guessing the namespace from the path (in `GeneratorPath` class)
+- Fixing generation of resource file if the resource has been disabled to generate
+- Fix when using a custom service provider namespace, namespace is correctly referenced in module.json and compose.json
+- Fix when using custom service provider namespace, module path is correctly referenced in the `RouteServiceProvider` and `ModuleServiceProvider`
+- Fix when using a custom path for controllers in the controller stub
+
+## 6.1.0 - 2019-11-01
+
+### Added
+
+- Added new `module:delete` command
+
+### Changed
+
+- Add optional path parameter to `module_path` helper (PR#861)
+- The default path of the `module_statuses.json` file has been moved to the Application's base path. This is to improve its visibility and the fact that it can be committed by default.
+- Throw an exception when no proper activator class was configured
+
+## 6.0.0 - 2019-09-19
+
+### Added
+
+- New File Activator feature. [PR #790](https://github.com/nWidart/laravel-modules/pull/790) from @ryssbowh
+    
+    This feature changes how modules are activated and de-activated. Currently module statuses are stored on disk, this features adds the possibility of storing this status information in a database.
+    
+    **Use the command `php artisan module:v6:migrate` to have old modules active status migrated to the new system.**
+    
+### Changed
+
+- Alternate way to define the namespace of modules in [PR #776](https://github.com/nWidart/laravel-modules/pull/776) by @daison12006013
+
+    This allows to have the content of the module under an `src/` folder for example.
+- **BREAKING** New way to handle active and inactive modules.
+
+    Modules don't store their active status in their module.json file anymore, but in a file under the storage folder.
+    Run `php artisan module:v6:migrate` to use the new system.
+- **BREAKING** Renamed method `enabled` to `isEnabled` in `\Nwidart\Modules\Module`.
+- **BREAKING** Renamed method `disabled` to `isDisabled` in `\Nwidart\Modules\Module`.
+- **BREAKING** Renamed method `enabled` to `isEnabled` in `\Nwidart\Modules\FileRepository`.
+- **BREAKING** Renamed method `disabled` to `isDisabled` in `\Nwidart\Modules\FileRepository`.
+- **BREAKING** Removed the `__get` magic method on the `\Nwidart\Modules\Module` class. Use `get()` or `json()->get()` instead.
+- The `module:make-listener` command now correctly uses the namespace configuration
+- The generated Factories now has type hints for the `\Illuminate\Database\Eloquent\Factory` class
+- Improved foreign key constraint generation
+- Exception handling in the `SeedCommand` has been improved
+
+## 5.0.1 - 2019-05-11
+
+### Added
+
+- `artisan module:route-provider` has a `--force` option to overwrite existing file
+
+### Changed
+
+- Fixing the `RouteServiceProvider` generation to properly use the `routes/web` and `routes/api` stubs
+- Replacing `@stop` with `@endsection` in the view stub file
+- `Module` class does not extend Laravel's Service Provider class anymore
+
+## 5.0.0 - 2019-03-18
+
+### Added
+
+- Laravel 5.8 support
+
+### Changed
+
+- Deprecated string and array methods have been replaced
+- Fixed caching not being cleared after disabling and enabling modules
+- Update Route Provider stub to not affect the root namespace of the URL generator (#727)
+
+### Removed
+
+- **PHP 7.1 support** 
+
+## 4.1.0 - 2019-03-04
+
+### Changed
+
+- Updated to laravel mix 4
+- Add `--api` argument to `module:make-controller` command
+- Seeding modules outside out `Modules` namespace
+
+## 4.0.0 - 2018-09-30
+
+### Added
+
+- New way of handling routes by default using a RouteServiceProvider (instead of start.php)
+- Laravel 5.7 support
+
+### Changed
+
+- Allow class resolution on short name and abstract
+- `module:seed` accepts a `--class` option
+
+## 3.3.1 - 2018-07-13
+
+### Changed
+
+- Added the ability to set a sub-namespace to controllers `module:make-controller Api\\TestController`
+
 ## 3.3.0 - 2018-06-21
 
 ### Changed

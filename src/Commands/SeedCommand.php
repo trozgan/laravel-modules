@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Commands;
 
+use ErrorException;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Str;
@@ -33,9 +34,8 @@ class SeedCommand extends Command
 
     /**
      * Execute the console command.
-     * @throws FatalThrowableError
      */
-    public function handle()
+    public function handle() : int
     {
         try {
             if ($name = $this->argument('module')) {
@@ -46,13 +46,20 @@ class SeedCommand extends Command
                 array_walk($modules, [$this, 'moduleSeed']);
                 $this->info('All modules seeded.');
             }
-        } catch (\Throwable $e) {
+        } catch (\Error $e) {
+            $e = new ErrorException($e->getMessage(), $e->getCode(), 1, $e->getFile(), $e->getLine(), $e);
             $this->reportException($e);
-
             $this->renderException($this->getOutput(), $e);
 
-            return 1;
+            return E_ERROR;
+        } catch (\Exception $e) {
+            $this->reportException($e);
+            $this->renderException($this->getOutput(), $e);
+
+            return E_ERROR;
         }
+
+        return 0;
     }
 
     /**
@@ -106,6 +113,14 @@ class SeedCommand extends Command
             $class = $this->getSeederName($name); //legacy support
             if (class_exists($class)) {
                 $seeders[] = $class;
+            } else {
+                //look at other namespaces
+                $classes = $this->getSeederNames($name);
+                foreach ($classes as $class) {
+                    if (class_exists($class)) {
+                        $seeders[] = $class;
+                    }
+                }
             }
         }
 
@@ -122,9 +137,11 @@ class SeedCommand extends Command
      */
     protected function dbSeed($className)
     {
-        $params = [
-            '--class' => $className,
-        ];
+        if ($option = $this->option('class')) {
+            $params['--class'] = Str::finish(substr($className, 0, strrpos($className, '\\')), '\\') . $option;
+        } else {
+            $params = ['--class' => $className];
+        }
 
         if ($option = $this->option('database')) {
             $params['--database'] = $option;
@@ -149,10 +166,33 @@ class SeedCommand extends Command
         $name = Str::studly($name);
 
         $namespace = $this->laravel['modules']->config('namespace');
+        $config = GenerateConfigReader::read('seeder');
+        $seederPath = str_replace('/', '\\', $config->getPath());
+
+        return $namespace . '\\' . $name . '\\' . $seederPath . '\\' . $name . 'DatabaseSeeder';
+    }
+
+    /**
+     * Get master database seeder name for the specified module under a different namespace than Modules.
+     *
+     * @param string $name
+     *
+     * @return array $foundModules array containing namespace paths
+     */
+    public function getSeederNames($name)
+    {
+        $name = Str::studly($name);
+
         $seederPath = GenerateConfigReader::read('seeder');
         $seederPath = str_replace('/', '\\', $seederPath->getPath());
 
-        return $namespace . '\\' . $name . '\\' . $seederPath . '\\' . $name . 'DatabaseSeeder';
+        $foundModules = [];
+        foreach ($this->laravel['modules']->config('scan.paths') as $path) {
+            $namespace = array_slice(explode('/', $path), -1)[0];
+            $foundModules[] = $namespace . '\\' . $name . '\\' . $seederPath . '\\' . $name . 'DatabaseSeeder';
+        }
+
+        return $foundModules;
     }
 
     /**
@@ -162,7 +202,7 @@ class SeedCommand extends Command
      * @param  \Throwable  $e
      * @return void
      */
-    protected function renderException($output, \Throwable $e)
+    protected function renderException($output, \Exception $e)
     {
         $this->laravel[ExceptionHandler::class]->renderForConsole($output, $e);
     }
@@ -173,7 +213,7 @@ class SeedCommand extends Command
      * @param  \Throwable  $e
      * @return void
      */
-    protected function reportException(\Throwable $e)
+    protected function reportException(\Exception $e)
     {
         $this->laravel[ExceptionHandler::class]->report($e);
     }

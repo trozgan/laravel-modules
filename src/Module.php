@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace Nwidart\Modules;
 
+use Illuminate\Cache\CacheManager;
 use Illuminate\Container\Container;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
+use Illuminate\Translation\Translator;
+use Nwidart\Modules\Contracts\ActivatorInterface;
 use Nwidart\Modules\Contracts\ModuleInterface;
 
 abstract class Module extends ServiceProvider implements ModuleInterface
@@ -38,29 +42,38 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      * @var array of cached Json objects, keyed by filename
      */
     protected $moduleJson = [];
+    /**
+     * @var CacheManager
+     */
+    private $cache;
+    /**
+     * @var Filesystem
+     */
+    private $files;
+    /**
+     * @var Translator
+     */
+    private $translator;
+    /**
+     * @var ActivatorInterface
+     */
+    private $activator;
 
     /**
      * The constructor.
-     *
      * @param Container $app
      * @param $name
      * @param $path
      */
-    public function __construct(Container $app, $name, $path)
+    public function __construct(Container $app, string $name, $path)
     {
-        parent::__construct($app);
         $this->name = $name;
         $this->path = $path;
-    }
-
-    /**
-     * Get laravel instance.
-     *
-     * @return \Illuminate\Contracts\Foundation\Application|\Laravel\Lumen\Application
-     */
-    public function getLaravel()
-    {
-        return $this->app;
+        $this->cache = $app['cache'];
+        $this->files = $app['files'];
+        $this->translator = $app['translator'];
+        $this->activator = $app[ActivatorInterface::class];
+        $this->app = $app;
     }
 
     /**
@@ -160,6 +173,7 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      *
      * @return $this
      */
+
     public function setPath($path): self
     {
         $this->path = $path;
@@ -212,8 +226,8 @@ abstract class Module extends ServiceProvider implements ModuleInterface
             $file = 'module.json';
         }
 
-        return array_get($this->moduleJson, $file, function () use ($file) {
-            return $this->moduleJson[$file] = new Json($this->getPath() . '/' . $file, $this->app['files']);
+        return Arr::get($this->moduleJson, $file, function () use ($file) {
+            return $this->moduleJson[$file] = new Json($this->getPath() . '/' . $file, $this->files);
         });
     }
 
@@ -264,9 +278,9 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      *
      * @param string $event
      */
-    protected function fireEvent($event)
+    protected function fireEvent($event): void
     {
-        $this->app['events']->fire(sprintf('modules.%s.' . $event, $this->getLowerName()), [$this]);
+        $this->app['events']->dispatch(sprintf('modules.%s.' . $event, $this->getLowerName()), [$this]);
     }
     /**
      * Register the aliases from this module.
@@ -288,7 +302,7 @@ abstract class Module extends ServiceProvider implements ModuleInterface
     /**
      * Register the files from this module.
      */
-    protected function registerFiles()
+    protected function registerFiles(): void
     {
         foreach ($this->get('files', []) as $file) {
             include $this->path . '/' . $file;
@@ -308,13 +322,13 @@ abstract class Module extends ServiceProvider implements ModuleInterface
     /**
      * Determine whether the given status same with the current module status.
      *
-     * @param $status
+     * @param bool $status
      *
      * @return bool
      */
-    public function isStatus(int $status) : bool
-    {
-        return $this->get('active', 0) === $status;
+
+    public function isStatus(int $status) : bool    {
+        return $this->activator->hasStatus($this, $status);
     }
 
     /**
@@ -322,9 +336,9 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      *
      * @return bool
      */
-    public function enabled() : bool
+    public function isEnabled() : bool
     {
-        return $this->isStatus(1);
+        return $this->activator->hasStatus($this, true);
     }
 
     /**
@@ -332,17 +346,17 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      *
      * @return bool
      */
-    public function disabled() : bool
+    public function isDisabled() : bool
     {
-        return !$this->enabled();
+        return !$this->isEnabled();
     }
 
     /**
      * Set active state for current module.
      *
-     * @param $active
+     * @param bool $active
      *
-     * @return bool
+     * @return void
      */
     public function setActive(int $active): bool
     {
@@ -356,7 +370,8 @@ abstract class Module extends ServiceProvider implements ModuleInterface
     {
         $this->fireEvent('disabling');
 
-        $this->setActive(0);
+        $this->activator->disable($this);
+        $this->flushCache();
 
         $this->fireEvent('disabled');
     }
@@ -368,7 +383,8 @@ abstract class Module extends ServiceProvider implements ModuleInterface
     {
         $this->fireEvent('enabling');
 
-        $this->setActive(1);
+        $this->activator->enable($this);
+        $this->flushCache();
 
         $this->fireEvent('enabled');
     }
@@ -380,6 +396,8 @@ abstract class Module extends ServiceProvider implements ModuleInterface
      */
     public function delete(): bool
     {
+        $this->activator->delete($this);
+
         return $this->json()->getFilesystem()->deleteDirectory($this->getPath());
     }
 
@@ -396,26 +414,33 @@ abstract class Module extends ServiceProvider implements ModuleInterface
     }
 
     /**
-     * Handle call to __get method.
-     *
-     * @param $key
-     *
-     * @return mixed
-     */
-    public function __get($key)
-    {
-        return $this->get($key);
-    }
-
-    /**
      * Check if can load files of module on boot method.
      *
      * @return bool
      */
-    protected function isLoadFilesOnBoot()
+    protected function isLoadFilesOnBoot(): bool
     {
         return config('modules.register.files', 'register') === 'boot' &&
             // force register method if option == boot && app is AsgardCms
             !class_exists('\Modules\Core\Foundation\AsgardCms');
+    }
+
+    private function flushCache(): void
+    {
+        if (config('modules.cache.enabled')) {
+            $this->cache->store()->flush();
+        }
+    }
+
+    /**
+     * Register a translation file namespace.
+     *
+     * @param  string  $path
+     * @param  string  $namespace
+     * @return void
+     */
+    private function loadTranslationsFrom(string $path, string $namespace): void
+    {
+        $this->translator->addNamespace($namespace, $path);
     }
 }

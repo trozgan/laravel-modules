@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Commands;
 
+use Illuminate\Support\Str;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 use Nwidart\Modules\Support\Stub;
 use Nwidart\Modules\Traits\ModuleCommandTrait;
@@ -51,12 +52,14 @@ class EventMakeCommand extends GeneratorCommand
      */
     protected function getFileName()
     {
-        return studly_case($this->argument('name'));
+        return Str::studly($this->argument('name'));
     }
 
     public function getDefaultNamespace() : string
     {
-        return $this->laravel['modules']->config('paths.generator.event.path', 'Events');
+        $module = $this->laravel['modules'];
+
+        return $module->config('paths.generator.event.namespace') ?: $module->config('paths.generator.event.path', 'Events');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Commands;
 
+use Illuminate\Support\Str;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 use Nwidart\Modules\Support\Stub;
 use Nwidart\Modules\Traits\ModuleCommandTrait;
@@ -30,7 +31,9 @@ class JobMakeCommand extends GeneratorCommand
 
     public function getDefaultNamespace() : string
     {
-        return $this->laravel['modules']->config('paths.generator.jobs.path', 'Jobs');
+        $module = $this->laravel['modules'];
+
+        return $module->config('paths.generator.jobs.namespace') ?: $module->config('paths.generator.jobs.path', 'Jobs');
     }
 
     /**
@@ -92,7 +95,7 @@ class JobMakeCommand extends GeneratorCommand
      */
     private function getFileName()
     {
-        return studly_case($this->argument('name'));
+        return Str::studly($this->argument('name'));
     }
 
     /**

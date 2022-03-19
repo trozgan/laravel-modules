@@ -8,11 +8,14 @@ use Illuminate\\Database\\Eloquent\\Factory;
 class ModuleNameServiceProvider extends ServiceProvider
 {
     /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
+     * @var string $moduleName
      */
-    protected $defer = false;
+    protected $moduleName = \'ModuleName\';
+
+    /**
+     * @var string $moduleNameLower
+     */
+    protected $moduleNameLower = \'modulename\';
 
     /**
      * Boot the application events.
@@ -24,8 +27,7 @@ class ModuleNameServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
-        $this->registerFactories();
-        $this->loadMigrationsFrom(__DIR__ . \'/../Database/Migrations\');
+        $this->loadMigrationsFrom(module_path($this->moduleName, \'Database/Migrations\'));
     }
 
     /**
@@ -35,7 +37,7 @@ class ModuleNameServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->register(RouteServiceProvider::class);
     }
 
     /**
@@ -46,10 +48,10 @@ class ModuleNameServiceProvider extends ServiceProvider
     protected function registerConfig()
     {
         $this->publishes([
-            __DIR__.\'/../Config/config.php\' => config_path(\'modulename.php\'),
+            module_path($this->moduleName, \'Config/config.php\') => config_path($this->moduleNameLower . \'.php\'),
         ], \'config\');
         $this->mergeConfigFrom(
-            __DIR__.\'/../Config/config.php\', \'modulename\'
+            module_path($this->moduleName, \'Config/config.php\'), $this->moduleNameLower
         );
     }
 
@@ -60,17 +62,15 @@ class ModuleNameServiceProvider extends ServiceProvider
      */
     public function registerViews()
     {
-        $viewPath = resource_path(\'views/modules/modulename\');
+        $viewPath = resource_path(\'views/modules/\' . $this->moduleNameLower);
 
-        $sourcePath = __DIR__.\'/../Resources/views\';
+        $sourcePath = module_path($this->moduleName, \'Resources/views\');
 
         $this->publishes([
             $sourcePath => $viewPath
-        ],\'views\');
+        ], [\'views\', $this->moduleNameLower . \'-module-views\']);
 
-        $this->loadViewsFrom(array_merge(array_map(function ($path) {
-            return $path . \'/modules/modulename\';
-        }, \\Config::get(\'view.paths\')), [$sourcePath]), \'modulename\');
+        $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->moduleNameLower);
     }
 
     /**
@@ -80,24 +80,12 @@ class ModuleNameServiceProvider extends ServiceProvider
      */
     public function registerTranslations()
     {
-        $langPath = resource_path(\'lang/modules/modulename\');
+        $langPath = resource_path(\'lang/modules/\' . $this->moduleNameLower);
 
         if (is_dir($langPath)) {
-            $this->loadTranslationsFrom($langPath, \'modulename\');
+            $this->loadTranslationsFrom($langPath, $this->moduleNameLower);
         } else {
-            $this->loadTranslationsFrom(__DIR__ .\'/../Resources/lang\', \'modulename\');
-        }
-    }
-
-    /**
-     * Register an additional directory of factories.
-     * 
-     * @return void
-     */
-    public function registerFactories()
-    {
-        if (! app()->environment(\'production\')) {
-            app(Factory::class)->load(__DIR__ . \'/../Database/factories\');
+            $this->loadTranslationsFrom(module_path($this->moduleName, \'Resources/lang\'), $this->moduleNameLower);
         }
     }
 
@@ -109,6 +97,17 @@ class ModuleNameServiceProvider extends ServiceProvider
     public function provides()
     {
         return [];
+    }
+
+    private function getPublishableViewPaths(): array
+    {
+        $paths = [];
+        foreach (\\Config::get(\'view.paths\') as $path) {
+            if (is_dir($path . \'/modules/\' . $this->moduleNameLower)) {
+                $paths[] = $path . \'/modules/\' . $this->moduleNameLower;
+            }
+        }
+        return $paths;
     }
 }
 ';

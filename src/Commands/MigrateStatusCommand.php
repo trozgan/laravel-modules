@@ -34,7 +34,7 @@ class MigrateStatusCommand extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle() : int
     {
         $this->module = $this->laravel['modules'];
 
@@ -43,13 +43,17 @@ class MigrateStatusCommand extends Command
         if ($name) {
             $module = $this->module->findOrFail($name);
 
-            return $this->migrateStatus($module);
+            $this->migrateStatus($module);
+
+            return 0;
         }
 
         foreach ($this->module->getOrdered($this->option('direction')) as $module) {
             $this->line('Running for module: <info>' . $module->getName() . '</info>');
             $this->migrateStatus($module);
         }
+
+        return 0;
     }
 
     /**
@@ -59,7 +63,7 @@ class MigrateStatusCommand extends Command
      */
     protected function migrateStatus(ModuleInterface $module)
     {
-        $path = str_replace(base_path(), '', (new Migrator($module))->getPath());
+        $path = str_replace(base_path(), '', (new Migrator($module, $this->getLaravel()))->getPath());
 
         $this->call('migrate:status', [
             '--path' => $path,

@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Tests\Commands;
 
+use Nwidart\Modules\Contracts\RepositoryInterface;
 use Nwidart\Modules\Tests\BaseTestCase;
 use Spatie\Snapshots\MatchesSnapshots;
 
@@ -17,7 +18,7 @@ class JobMakeCommandTest extends BaseTestCase
      */
     private $modulePath;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->modulePath = base_path('modules/Blog');
@@ -25,38 +26,41 @@ class JobMakeCommandTest extends BaseTestCase
         $this->artisan('module:make', ['name' => ['Blog']]);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
-        $this->finder->deleteDirectory($this->modulePath);
+        $this->app[RepositoryInterface::class]->delete('Blog');
         parent::tearDown();
     }
 
     /** @test */
     public function it_generates_the_job_class()
     {
-        $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
 
         $this->assertTrue(is_file($this->modulePath . '/Jobs/SomeJob.php'));
+        $this->assertSame(0, $code);
     }
 
     /** @test */
     public function it_generated_correct_file_with_content()
     {
-        $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
 
         $file = $this->finder->get($this->modulePath . '/Jobs/SomeJob.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 
     /** @test */
     public function it_generated_correct_sync_job_file_with_content()
     {
-        $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog', '--sync' => true]);
+        $code = $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog', '--sync' => true]);
 
         $file = $this->finder->get($this->modulePath . '/Jobs/SomeJob.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 
     /** @test */
@@ -64,10 +68,24 @@ class JobMakeCommandTest extends BaseTestCase
     {
         $this->app['config']->set('modules.paths.generator.jobs.path', 'SuperJobs');
 
-        $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
 
         $file = $this->finder->get($this->modulePath . '/SuperJobs/SomeJob.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
+    }
+
+    /** @test */
+    public function it_can_change_the_default_namespace_specific()
+    {
+        $this->app['config']->set('modules.paths.generator.jobs.namespace', 'SuperJobs');
+
+        $code = $this->artisan('module:make-job', ['name' => 'SomeJob', 'module' => 'Blog']);
+
+        $file = $this->finder->get($this->modulePath . '/Jobs/SomeJob.php');
+
+        $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 }

@@ -4,6 +4,8 @@ namespace Nwidart\Modules\Migrations;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Nwidart\Modules\Module;
 use Nwidart\Modules\Contracts\ModuleInterface;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 
@@ -38,7 +40,7 @@ class Migrator
     public function __construct(ModuleInterface $module)
     {
         $this->module = $module;
-        $this->laravel = $module->getLaravel();
+        $this->laravel = $application;
     }
 
     /**
@@ -198,9 +200,13 @@ class Migrator
      */
     public function resolve($file)
     {
-        $file = implode('_', array_slice(explode('_', $file), 4));
+        $name = implode('_', array_slice(explode('_', $file), 4));
 
-        $class = studly_case($file);
+        $class = Str::studly($name);
+
+        if (!class_exists($class) && file_exists($this->getPath() . '/' . $file . '.php') ) {
+            return include $this->getPath() . '/' . $file . '.php';
+        }
 
         return new $class();
     }

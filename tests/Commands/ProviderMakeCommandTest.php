@@ -2,6 +2,7 @@
 
 namespace Nwidart\Modules\Tests\Commands;
 
+use Nwidart\Modules\Contracts\RepositoryInterface;
 use Nwidart\Modules\Tests\BaseTestCase;
 use Spatie\Snapshots\MatchesSnapshots;
 
@@ -17,7 +18,7 @@ class ProviderMakeCommandTest extends BaseTestCase
      */
     private $modulePath;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->modulePath = base_path('modules/Blog');
@@ -25,48 +26,52 @@ class ProviderMakeCommandTest extends BaseTestCase
         $this->artisan('module:make', ['name' => ['Blog'], '--plain' => true, ]);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
-        $this->finder->deleteDirectory($this->modulePath);
+        $this->app[RepositoryInterface::class]->delete('Blog');
         parent::tearDown();
     }
 
     /** @test */
     public function it_generates_a_service_provider()
     {
-        $this->artisan('module:make-provider', ['name' => 'MyBlogServiceProvider', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-provider', ['name' => 'MyBlogServiceProvider', 'module' => 'Blog']);
 
         $this->assertTrue(is_file($this->modulePath . '/Providers/MyBlogServiceProvider.php'));
+        $this->assertSame(0, $code);
     }
     /** @test */
     public function it_generated_correct_file_with_content()
     {
-        $this->artisan('module:make-provider', ['name' => 'MyBlogServiceProvider', 'module' => 'Blog']);
+        $code = $this->artisan('module:make-provider', ['name' => 'MyBlogServiceProvider', 'module' => 'Blog']);
 
         $file = $this->finder->get($this->modulePath . '/Providers/MyBlogServiceProvider.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 
     /** @test */
     public function it_generates_a_master_service_provider_with_resource_loading()
     {
-        $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
+        $code = $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
 
         $file = $this->finder->get($this->modulePath . '/Providers/BlogServiceProvider.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 
     /** @test */
     public function it_can_have_custom_migration_resources_location_paths()
     {
         $this->app['config']->set('modules.paths.generator.migration', 'migrations');
-        $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
+        $code = $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
 
         $file = $this->finder->get($this->modulePath . '/Providers/BlogServiceProvider.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 
     /** @test */
@@ -74,10 +79,24 @@ class ProviderMakeCommandTest extends BaseTestCase
     {
         $this->app['config']->set('modules.paths.generator.provider.path', 'SuperProviders');
 
-        $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
+        $code = $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
 
         $file = $this->finder->get($this->modulePath . '/SuperProviders/BlogServiceProvider.php');
 
         $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
+    }
+
+    /** @test */
+    public function it_can_change_the_default_namespace_specific()
+    {
+        $this->app['config']->set('modules.paths.generator.provider.namespace', 'SuperProviders');
+
+        $code = $this->artisan('module:make-provider', ['name' => 'BlogServiceProvider', 'module' => 'Blog', '--master' => true]);
+
+        $file = $this->finder->get($this->modulePath . '/Providers/BlogServiceProvider.php');
+
+        $this->assertMatchesSnapshot($file);
+        $this->assertSame(0, $code);
     }
 }

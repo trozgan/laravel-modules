@@ -2,6 +2,8 @@
 
 namespace Nwidart\Modules\Commands;
 
+use Illuminate\Support\Str;
+use Nwidart\Modules\Module;
 use Nwidart\Modules\Contracts\ModuleInterface;
 use Nwidart\Modules\Support\Config\GenerateConfigReader;
 use Nwidart\Modules\Support\Stub;
@@ -60,27 +62,33 @@ class ListenerMakeCommand extends GeneratorCommand
         $module = $this->laravel['modules']->findOrFail($this->getModuleName());
 
         return (new Stub($this->getStubName(), [
-            'NAMESPACE' => $this->getNamespace($module),
+            'NAMESPACE' => $this->getClassNamespace($module),
             'EVENTNAME' => $this->getEventName($module),
-            'SHORTEVENTNAME' => $this->option('event'),
+            'SHORTEVENTNAME' => $this->getShortEventName(),
             'CLASS' => $this->getClass(),
         ]))->render();
     }
 
-    private function getNamespace($module)
+    public function getDefaultNamespace() : string
     {
-        $listenerPath = GenerateConfigReader::read('listener');
+        $module = $this->laravel['modules'];
 
-        $namespace = str_replace('/', '\\', $listenerPath->getPath());
-
-        return $this->getClassNamespace($module) . "\\" . $namespace;
+        return $module->config('paths.generator.listener.namespace') ?: $module->config('paths.generator.listener.path', 'Listeners');
     }
 
     protected function getEventName(ModuleInterface $module)
     {
+        $namespace = $this->laravel['modules']->config('namespace') . "\\" . $module->getStudlyName();
         $eventPath = GenerateConfigReader::read('event');
 
-        return $this->getClassNamespace($module) . "\\" . $eventPath->getPath() . "\\" . $this->option('event');
+        $eventName = $namespace . "\\" . $eventPath->getPath() . "\\" . $this->option('event');
+
+        return str_replace('/', '\\', $eventName);
+    }
+
+    protected function getShortEventName()
+    {
+        return class_basename($this->option('event'));
     }
 
     protected function getDestinationFilePath()
@@ -97,7 +105,7 @@ class ListenerMakeCommand extends GeneratorCommand
      */
     protected function getFileName()
     {
-        return studly_case($this->argument('name'));
+        return Str::studly($this->argument('name'));
     }
 
     /**

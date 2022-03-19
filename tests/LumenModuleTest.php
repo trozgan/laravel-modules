@@ -2,8 +2,9 @@
 
 namespace Nwidart\Modules\Tests;
 
+use Illuminate\Support\Facades\Event;
+use Nwidart\Modules\Contracts\ActivatorInterface;
 use Nwidart\Modules\Json;
-use Nwidart\Modules\Module;
 
 class LumenModuleTest extends BaseTestCase
 {
@@ -12,10 +13,22 @@ class LumenModuleTest extends BaseTestCase
      */
     private $module;
 
-    public function setUp()
+    /**
+     * @var ActivatorInterface
+     */
+    private $activator;
+
+    public function setUp(): void
     {
         parent::setUp();
         $this->module = new LumenTestingModule($this->app, 'Recipe Name', __DIR__ . '/stubs/valid/Recipe');
+        $this->activator = $this->app[ActivatorInterface::class];
+    }
+
+    public function tearDown(): void
+    {
+        $this->activator->reset();
+        parent::tearDown();
     }
 
     /** @test */
@@ -109,37 +122,37 @@ class LumenModuleTest extends BaseTestCase
     /** @test */
     public function it_module_status_check()
     {
-        $this->assertTrue($this->module->isStatus(1));
-        $this->assertFalse($this->module->isStatus(0));
+        $this->assertFalse($this->module->isStatus(true));
+        $this->assertTrue($this->module->isStatus(false));
     }
 
     /** @test */
     public function it_checks_module_enabled_status()
     {
-        $this->assertTrue($this->module->enabled());
-        $this->assertFalse($this->module->disabled());
-    }
-
-    /** @test */
-    public function it_fires_events_when_module_is_disabled()
-    {
-        $this->expectsEvents([
-            sprintf('modules.%s.disabling', $this->module->getLowerName()),
-            sprintf('modules.%s.disabled', $this->module->getLowerName()),
-        ]);
-
-        $this->module->disable();
+        $this->assertFalse($this->module->isEnabled());
+        $this->assertTrue($this->module->isDisabled());
     }
 
     /** @test */
     public function it_fires_events_when_module_is_enabled()
     {
-        $this->expectsEvents([
-            sprintf('modules.%s.enabling', $this->module->getLowerName()),
-            sprintf('modules.%s.enabled', $this->module->getLowerName()),
-        ]);
+        Event::fake();
 
         $this->module->enable();
+
+        Event::assertDispatched(sprintf('modules.%s.enabling', $this->module->getLowerName()));
+        Event::assertDispatched(sprintf('modules.%s.enabled', $this->module->getLowerName()));
+    }
+
+    /** @test */
+    public function it_fires_events_when_module_is_disabled()
+    {
+        Event::fake();
+
+        $this->module->disable();
+
+        Event::assertDispatched(sprintf('modules.%s.disabling', $this->module->getLowerName()));
+        Event::assertDispatched(sprintf('modules.%s.disabled', $this->module->getLowerName()));
     }
 
     /** @test */

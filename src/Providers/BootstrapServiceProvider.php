@@ -3,22 +3,23 @@
 namespace Nwidart\Modules\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Nwidart\Modules\Contracts\RepositoryInterface;
 
 class BootstrapServiceProvider extends ServiceProvider
 {
     /**
      * Booting the package.
      */
-    public function boot()
+    public function boot(): void
     {
-        $this->app['modules']->boot();
+        $this->app[RepositoryInterface::class]->boot();
     }
 
     /**
      * Register the provider.
      */
-    public function register()
+    public function register(): void
     {
-        $this->app['modules']->register();
+        $this->app[RepositoryInterface::class]->register();
     }
 }
